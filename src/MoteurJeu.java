@@ -48,7 +48,6 @@ public class MoteurJeu implements Runnable {
         Graphics g = bs.getDrawGraphics();
 
         g.setColor(Color.cyan);
-        g.drawRect(0, 0, canvas.getWidth(), canvas.getHeight());
         g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         g.dispose();
         bs.show();
