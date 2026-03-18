@@ -1,55 +1,38 @@
-import java.awt.*;
-import java.awt.image.BufferStrategy;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 
-public class MoteurJeu implements Runnable {
-    private boolean enMarche = false;
-    private Canvas canvas;
+public class MoteurJeu {
+    private final long fenetre;
 
-    public MoteurJeu(Canvas canvas) {
-        this.canvas = canvas;
+    public MoteurJeu(long fenetre) {
+        this.fenetre = fenetre;
     }
 
-    public void demarrer() {
-        enMarche = true;
-        new Thread(this).start(); // Lance la méthode run() en arrière-plan
-    }
-
-    @Override
     public void run() {
-        int limiteFps = 60;
-        long tempsCibleNano = 1000000000 / limiteFps;
-        while (enMarche) {
-            long tempsDebut = System.nanoTime();
+        // Liaison du contexte OpenGL à ce thread
+        GLFW.glfwMakeContextCurrent(fenetre);
+        GL.createCapabilities();
 
-            update(); // 1. Mettre à jour la logique (physique, position)
-            render(); // 2. Afficher (OpenGL interviendra ici plus tard)
+        GL11.glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
 
-            long tempsRestant = tempsCibleNano - (System.nanoTime() - tempsDebut);
-            if (tempsRestant > 0){
-                try {
-                    Thread.sleep(tempsRestant / 1000000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+        // Boucle de jeu
+        while (!GLFW.glfwWindowShouldClose(fenetre)) {
+            update();
+            render();
         }
     }
 
-    private void update() { /* Logique du jeu */ }
+    private void update() {
+        // On récupère les entrées clavier/souris
+        GLFW.glfwPollEvents();
+    }
+
     private void render() {
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
-        BufferStrategy bs = canvas.getBufferStrategy();
+        // --- Futur code de dessin ici ---
 
-        if (bs == null) {
-            canvas.createBufferStrategy(3);
-            return;
-        }
-
-        Graphics g = bs.getDrawGraphics();
-
-        g.setColor(Color.cyan);
-        g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        g.dispose();
-        bs.show();
+        GLFW.glfwSwapBuffers(fenetre);
     }
 }
