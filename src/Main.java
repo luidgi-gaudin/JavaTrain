@@ -10,7 +10,7 @@ public class Main {
         fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         fenetre.setVisible(true);
 
-        MoteurJeu jeu = new MoteurJeu();
+        MoteurJeu jeu = new MoteurJeu(canvas);
         jeu.demarrer();
     }
 }
