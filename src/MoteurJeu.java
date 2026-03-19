@@ -1,12 +1,15 @@
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.system.MemoryStack;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.FloatBuffer;
 
 public class MoteurJeu {
     // fenetre : identifiant (handle) de la fenêtre créée par GLFW
@@ -16,14 +19,14 @@ public class MoteurJeu {
     // On dessine ici 2 triangles pour former un carré.
     // Chaque ligne représente un sommet avec : Position (X, Y, Z) et Couleur (R, G, B)
     private final float[] sommets = {
-            // Position (X, Y, Z)    // Couleur (R, G, B)
-            -0.5f,  0.5f, 0.0f,      1.0f, 0.0f, 0.0f,  // Haut-Gauche (Rouge)
-            -0.5f, -0.5f, 0.0f,      0.0f, 1.0f, 0.0f,  // Bas-Gauche  (Vert)
-            0.5f, -0.5f, 0.0f,      0.0f, 0.0f, 1.0f,  // Bas-Droit   (Bleu)
+            // Position (X, Y, Z)          // Couleur (R, G, B)
+            -0.5f,  0.5f, -2.0f,           1.0f, 0.0f, 0.0f,  // Haut-Gauche
+            -0.5f, -0.5f, -2.0f,           0.0f, 1.0f, 0.0f,  // Bas-Gauche
+            0.5f, -0.5f, -2.0f,           0.0f, 0.0f, 1.0f,  // Bas-Droit
 
-            -0.5f,  0.5f, 0.0f,      1.0f, 0.0f, 0.0f,  // Haut-Gauche (Rouge)
-            0.5f, -0.5f, 0.0f,      0.0f, 0.0f, 1.0f,  // Bas-Droit   (Bleu)
-            0.5f,  0.5f, 0.0f,      1.0f, 1.0f, 0.0f   // Haut-Droit  (Jaune)
+            -0.5f,  0.5f, -2.0f,           1.0f, 0.0f, 0.0f,  // Haut-Gauche
+            0.5f, -0.5f, -2.0f,           0.0f, 0.0f, 1.0f,  // Bas-Droit
+            0.5f,  0.5f, -2.0f,           1.0f, 1.0f, 0.0f   // Haut-Droit
     };
 
     /**
@@ -123,6 +126,19 @@ public class MoteurJeu {
 
         // On active le programme shader pour le rendu
         GL20.glUseProgram(shaderProgram);
+
+        // On récupère l'emplacement de la variable "projection" définie dans bloc.vert
+        int uniProjection = GL20.glGetUniformLocation(shaderProgram, "projection");
+
+        // On crée la matrice (70° FOV, Ratio 800/600, Proche: 0.1, Loin: 100.0)
+        Matrix4f projection = new Matrix4f().perspective((float) Math.toRadians(70.0f), 800.0f/600.0f, 0.1f, 100.0f);
+
+        // On envoie la matrice à la carte graphique
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer fb = stack.mallocFloat(16);
+            projection.get(fb);
+            GL20.glUniformMatrix4fv(uniProjection, false, fb);
+        }
 
         // Boucle de jeu (Loop)
         while (!GLFW.glfwWindowShouldClose(fenetre)) {
