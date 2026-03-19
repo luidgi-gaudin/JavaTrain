@@ -2,22 +2,23 @@ import org.lwjgl.glfw.GLFW;
 
 public class Main {
     public static void main(String[] args) {
-        // Initialisation de GLFW
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("Impossible d'initialiser GLFW");
         }
 
-        // Création de la fenêtre
-        long fenetre = GLFW.glfwCreateWindow(800, 600, "Mon Minecraft", 0, 0);
+        // OpenGL 3.3 Core Profile
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+
+        long fenetre = GLFW.glfwCreateWindow(1280, 720, "Mon Minecraft", 0, 0);
         if (fenetre == 0) {
             throw new RuntimeException("Échec de la création de la fenêtre");
         }
 
-        // Lancement du moteur sur le thread principal
         MoteurJeu jeu = new MoteurJeu(fenetre);
         jeu.run();
 
-        // Nettoyage à la fermeture
         GLFW.glfwTerminate();
     }
 }
