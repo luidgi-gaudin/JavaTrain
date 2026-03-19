@@ -29,7 +29,7 @@ public class MoteurJeu {
             BufferedReader lecteurLigne = new BufferedReader(lecteur);
             String ligne;
             while ((ligne = lecteurLigne.readLine()) != null) {
-                contenuShaders.append(ligne + "\n ");
+                contenuShaders.append(ligne + " \n ");
             }
             lecteurLigne.close();
         } catch (IOException e) {
@@ -39,16 +39,43 @@ public class MoteurJeu {
         return contenuShaders.toString();
     }
 
+    private int compileShader(String source, int type) {
+        int shaderId = GL20.glCreateShader(type);
+        GL20.glShaderSource(shaderId, source);
+        GL20.glCompileShader(shaderId);
+        return shaderId;
+    }
+
     public MoteurJeu(long fenetre) {
         this.fenetre = fenetre;
     }
 
     public void run() {
-        chargerShaders("ressources/shaders/bloc.vert");
-        chargerShaders("ressources/shaders/bloc.frag");
         // Liaison du contexte OpenGL à ce thread
         GLFW.glfwMakeContextCurrent(fenetre);
         GL.createCapabilities();
+
+        //bloc chargement shaders
+        String vertex = chargerShaders("ressources/shaders/bloc.vert");
+        String fragment = chargerShaders("ressources/shaders/bloc.frag");
+
+        //bloc compilation shaders
+        int vertexShader = compileShader(vertex, GL20.GL_VERTEX_SHADER);
+        int fragmentShader = compileShader(fragment, GL20.GL_FRAGMENT_SHADER);
+
+        int shaderProgram = GL20.glCreateProgram();
+        GL20.glAttachShader(shaderProgram, vertexShader);
+        GL20.glAttachShader(shaderProgram, fragmentShader);
+        GL20.glLinkProgram(shaderProgram);
+
+        //vérifier si le lien a réussi
+        if (GL20.glGetProgrami(shaderProgram, GL20.GL_LINK_STATUS) == 0) {
+            throw new RuntimeException("Erreur de lien : " + GL20.glGetProgramInfoLog(shaderProgram));
+        }
+
+        // Nettoyage des shaders individuels
+        GL20.glDeleteShader(vertexShader);
+        GL20.glDeleteShader(fragmentShader);
 
         GL11.glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
 
