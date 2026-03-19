@@ -15,6 +15,8 @@ public class MoteurJeu {
     // fenetre : identifiant (handle) de la fenêtre créée par GLFW
     private final long fenetre;
 
+    private float angle = 0.0f;
+
     // sommets : données brutes envoyées à la carte graphique
     // On dessine ici 2 triangles pour former un carré.
     // Chaque ligne représente un sommet avec : Position (X, Y, Z) et Couleur (R, G, B)
@@ -140,8 +142,31 @@ public class MoteurJeu {
             GL20.glUniformMatrix4fv(uniProjection, false, fb);
         }
 
+        // Juste après uniProjection
+        int uniModel = GL20.glGetUniformLocation(shaderProgram, "model");
+
         // Boucle de jeu (Loop)
         while (!GLFW.glfwWindowShouldClose(fenetre)) {
+            // --- MISE À JOUR ---
+            angle += 0.05f; // Vitesse de rotation (ajuste à ta guise)
+
+            // On crée la matrice "Model" qui place l'objet
+            // On recule de -2.0f et on tourne sur l'axe Y (0, 1, 0)
+            Matrix4f model = new Matrix4f()
+                    .translate(0, 0, -2.0f)
+                    .rotate((float) Math.toRadians(angle), 0, 1, 0);
+
+            // --- ENVOI AU SHADER ---
+            // On doit activer le programme avant d'envoyer un Uniform
+            GL20.glUseProgram(shaderProgram);
+
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                FloatBuffer fb = stack.mallocFloat(16);
+                model.get(fb);
+                GL20.glUniformMatrix4fv(uniModel, false, fb);
+            }
+
+            // --- RENDU ---
             update();
             render();
         }
