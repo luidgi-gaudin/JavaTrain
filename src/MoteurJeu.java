@@ -7,15 +7,14 @@ import org.lwjgl.opengl.GL20;
 public class MoteurJeu {
     private final long fenetre;
     private final float[] sommets = {
-            // Premier triangle (Bas-Gauche)
-            -0.5f,  0.5f, 0.0f,  // Haut-Gauche
-            -0.5f, -0.5f, 0.0f,  // Bas-Gauche
-            0.5f, -0.5f, 0.0f,  // Bas-Droit
+            // Position (X, Y, Z)    // Couleur (R, G, B)
+            -0.5f,  0.5f, 0.0f,      1.0f, 0.0f, 0.0f,  // Haut-Gauche (Rouge)
+            -0.5f, -0.5f, 0.0f,      0.0f, 1.0f, 0.0f,  // Bas-Gauche  (Vert)
+            0.5f, -0.5f, 0.0f,      0.0f, 0.0f, 1.0f,  // Bas-Droit   (Bleu)
 
-            // Deuxième triangle (Haut-Droit)
-            -0.5f,  0.5f, 0.0f,  // Haut-Gauche
-            0.5f, -0.5f, 0.0f,  // Bas-Droit
-            0.5f,  0.5f, 0.0f   // Haut-Droit
+            -0.5f,  0.5f, 0.0f,      1.0f, 0.0f, 0.0f,  // Haut-Gauche (Rouge)
+            0.5f, -0.5f, 0.0f,      0.0f, 0.0f, 1.0f,  // Bas-Droit   (Bleu)
+            0.5f,  0.5f, 0.0f,      1.0f, 1.0f, 0.0f   // Haut-Droit  (Jaune)
     };
 
     public MoteurJeu(long fenetre) {
@@ -34,15 +33,12 @@ public class MoteurJeu {
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, sommets, GL15.GL_STATIC_DRAW);
-        GL20.glVertexAttribPointer(
-                0,            // Index : l'emplacement (souvent 0 pour la position)
-                3,            // Taille : 3 nombres par sommet (x, y, z)
-                GL11.GL_FLOAT,// Type : ce sont des nombres décimaux
-                false,        // Normalisé : non
-                12,           // Stride : l'espace entre deux sommets (en octets)
-                0             // Offset : le point de départ dans le buffer
-        );
+
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 24, 0);
         GL20.glEnableVertexAttribArray(0);
+
+        GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 24, 12);
+        GL20.glEnableVertexAttribArray(1);
 
         // Boucle de jeu
         while (!GLFW.glfwWindowShouldClose(fenetre)) {
