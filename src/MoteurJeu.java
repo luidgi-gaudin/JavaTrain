@@ -4,6 +4,10 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
 public class MoteurJeu {
     private final long fenetre;
     private final float[] sommets = {
@@ -17,12 +21,31 @@ public class MoteurJeu {
             0.5f,  0.5f, 0.0f,      1.0f, 1.0f, 0.0f   // Haut-Droit  (Jaune)
     };
 
+    private String chargerShaders(String path){
+        StringBuilder contenuShaders = new StringBuilder();
+
+        try {
+            FileReader lecteur = new FileReader(path);
+            BufferedReader lecteurLigne = new BufferedReader(lecteur);
+            String ligne;
+            while ((ligne = lecteurLigne.readLine()) != null) {
+                contenuShaders.append(ligne + "\n ");
+            }
+            lecteurLigne.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return contenuShaders.toString();
+    }
+
     public MoteurJeu(long fenetre) {
         this.fenetre = fenetre;
     }
 
     public void run() {
-
+        chargerShaders("ressources/shaders/bloc.vert");
+        chargerShaders("ressources/shaders/bloc.frag");
         // Liaison du contexte OpenGL à ce thread
         GLFW.glfwMakeContextCurrent(fenetre);
         GL.createCapabilities();
