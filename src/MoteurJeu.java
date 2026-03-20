@@ -23,6 +23,7 @@ public class MoteurJeu {
     private Vector3f cameraFront = new Vector3f(0.0f, 0.0f, -1.0f); // Là où je regardes
     private Vector3f cameraUp    = new Vector3f(0.0f, 1.0f, 0.0f); // Le "haut" du monde
     private float vitesseCamera  = 0.05f;
+    private boolean firstMouse = true;
 
     private float yaw = -90.0f; // Rotation gauche/droite
     private float pitch = 0.0f;  // Rotation haut/bas
@@ -226,6 +227,12 @@ public class MoteurJeu {
                 float offsetY = (float) (lastY - y); // Inversé car le Y va du haut vers le bas
                 lastX = x;
                 lastY = y;
+
+                if (firstMouse) {
+                    lastX = x;
+                    lastY = y;
+                    firstMouse = false;
+                }
 
                 float sensibilite = 0.1f;
                 yaw   += offsetX * sensibilite;
