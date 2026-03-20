@@ -1,4 +1,5 @@
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -183,9 +184,10 @@ public class MoteurJeu {
             GL20.glUniformMatrix4fv(uniProjection, false, fb);
         }
 
-        // Juste après uniProjection
+
         int uniModel = GL20.glGetUniformLocation(shaderProgram, "model");
 
+        int uniView = GL20.glGetUniformLocation(shaderProgram, "view");
         // Boucle de jeu (Loop)
         while (!GLFW.glfwWindowShouldClose(fenetre)) {
             // --- MISE À JOUR ---
@@ -197,14 +199,27 @@ public class MoteurJeu {
                     .translate(0, 0, -2.0f)
                     .rotate((float) Math.toRadians(angle), 0, 1, 0);
 
+            // permet d'envoyer les donnée au shaders pour la vue
+            Matrix4f view = new Matrix4f().lookAt(
+                    new Vector3f(0.0f, 2.0f, 3.0f), // Position de la caméra (X, Y, Z) - On est en hauteur
+                    new Vector3f(0.0f, 0.0f, 0.0f), // Point que l'on regarde (le centre du monde)
+                    new Vector3f(0.0f, 1.0f, 0.0f)  // Vecteur "Haut" (l'axe Y est vers le haut)
+            );
+
             // --- ENVOI AU SHADER ---
             // On doit activer le programme avant d'envoyer un Uniform
             GL20.glUseProgram(shaderProgram);
 
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 FloatBuffer fb = stack.mallocFloat(16);
+
+                //envoie de la matrice model
                 model.get(fb);
                 GL20.glUniformMatrix4fv(uniModel, false, fb);
+
+                //envoie de la matrice de vue
+                view.get(fb);
+                GL20.glUniformMatrix4fv(uniView, false, fb);
             }
 
             // --- RENDU ---
