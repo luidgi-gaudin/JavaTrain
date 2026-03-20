@@ -18,6 +18,11 @@ public class MoteurJeu {
 
     private float angle = 0.0f;
 
+    private Vector3f cameraPos   = new Vector3f(0.0f, 0.0f, 3.0f); // position
+    private Vector3f cameraFront = new Vector3f(0.0f, 0.0f, -1.0f); // Là où je regardes
+    private Vector3f cameraUp    = new Vector3f(0.0f, 1.0f, 0.0f); // Le "haut" du monde
+    private float vitesseCamera  = 0.05f;
+
     // sommets : données brutes envoyées à la carte graphique
     // On dessine ici 2 triangles pour former un carré.
     // Chaque ligne représente un sommet avec : Position (X, Y, Z) et Couleur (R, G, B)
@@ -165,8 +170,15 @@ public class MoteurJeu {
         int uniModel = GL20.glGetUniformLocation(shaderProgram, "model");
 
         int uniView = GL20.glGetUniformLocation(shaderProgram, "view");
+
+        GLFW.glfwSetInputMode(fenetre, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+
         // Boucle de jeu (Loop)
         while (!GLFW.glfwWindowShouldClose(fenetre)) {
+
+            update(fenetre);
+
+
             // --- MISE À JOUR ---
             angle += 0.05f; // Vitesse de rotation (ajuste à ta guise)
 
@@ -176,12 +188,11 @@ public class MoteurJeu {
                     .translate(0, 0, -2.0f)
                     .rotate((float) Math.toRadians(angle), 0, 1, 0);
 
-            // permet d'envoyer les donnée au shaders pour la vue
-            Matrix4f view = new Matrix4f().lookAt(
-                    new Vector3f(0.0f, 2.0f, 3.0f), // Position de la caméra (X, Y, Z) - On est en hauteur
-                    new Vector3f(0.0f, 0.0f, 0.0f), // Point que l'on regarde (le centre du monde)
-                    new Vector3f(0.0f, 1.0f, 0.0f)  // Vecteur "Haut" (l'axe Y est vers le haut)
-            );
+
+            // On regarde de : cameraPos
+            // Vers : cameraPos + cameraFront (ce qui est devant nous)
+            Vector3f cible = new Vector3f(cameraPos).add(cameraFront);
+            Matrix4f view = new Matrix4f().lookAt(cameraPos, cible, cameraUp);
 
             // --- ENVOI AU SHADER ---
             // On doit activer le programme avant d'envoyer un Uniform
@@ -200,14 +211,31 @@ public class MoteurJeu {
             }
 
             // --- RENDU ---
-            update();
             render();
         }
     }
 
-    private void update() {
-        // On récupère les entrées clavier/souris pour éviter que la fenêtre ne freeze
+    private void update(long window) {
         GLFW.glfwPollEvents();
+
+        // Avancer (Z)
+        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == GLFW.GLFW_PRESS) {
+            cameraPos.add(new Vector3f(cameraFront).mul(vitesseCamera));
+        }
+        // Reculer (S)
+        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == GLFW.GLFW_PRESS) {
+            cameraPos.sub(new Vector3f(cameraFront).mul(vitesseCamera));
+        }
+        // Gauche (Q)
+        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == GLFW.GLFW_PRESS) {
+            Vector3f gauche = new Vector3f(cameraFront).cross(cameraUp).normalize();
+            cameraPos.sub(gauche.mul(vitesseCamera));
+        }
+        // Droite (D)
+        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == GLFW.GLFW_PRESS) {
+            Vector3f droite = new Vector3f(cameraFront).cross(cameraUp).normalize();
+            cameraPos.add(droite.mul(vitesseCamera));
+        }
     }
 
     private void render() {
