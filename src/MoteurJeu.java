@@ -211,12 +211,14 @@ public class MoteurJeu {
     }
 
     private void render() {
-        // Efface l'écran (couleur de fond + profondeur)
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-        // Dessine les triangles à partir des données dans le buffer actif
-        // 36 sommets au total (12 triangles) et 6 faces pour faire le cube
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 36);
-        // Affiche l'image calculée à l'écran (Double buffering)
+
+        // On dessine en utilisant les éléments (indices)
+        // 36 : le nombre total d'indices
+        // GL_UNSIGNED_INT : car nos indices sont des 'int'
+        // 0 : on commence au début du buffer d'indices
+        GL20.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
+
         GLFW.glfwSwapBuffers(fenetre);
     }
 }
