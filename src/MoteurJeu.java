@@ -21,54 +21,27 @@ public class MoteurJeu {
     // sommets : données brutes envoyées à la carte graphique
     // On dessine ici 2 triangles pour former un carré.
     // Chaque ligne représente un sommet avec : Position (X, Y, Z) et Couleur (R, G, B)
+    // On ne définit que les 8 coins uniques du cube
     private final float[] sommets = {
-            // Face Arrière          // Couleurs
-            -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
+            // Position (X, Y, Z)    // Couleur (R, G, B)
+            -0.5f,  0.5f,  0.5f,     1.0f, 0.0f, 0.0f, // 0: Avant-Haut-Gauche
+            -0.5f, -0.5f,  0.5f,     0.0f, 1.0f, 0.0f, // 1: Avant-Bas-Gauche
+            0.5f, -0.5f,  0.5f,     0.0f, 0.0f, 1.0f, // 2: Avant-Bas-Droit
+            0.5f,  0.5f,  0.5f,     1.0f, 1.0f, 0.0f, // 3: Avant-Haut-Droit
+            -0.5f,  0.5f, -0.5f,     1.0f, 0.0f, 1.0f, // 4: Arrière-Haut-Gauche
+            -0.5f, -0.5f, -0.5f,     0.0f, 1.0f, 1.0f, // 5: Arrière-Bas-Gauche
+            0.5f, -0.5f, -0.5f,     1.0f, 1.0f, 1.0f, // 6: Arrière-Bas-Droit
+            0.5f,  0.5f, -0.5f,     0.0f, 0.0f, 0.0f  // 7: Arrière-Haut-Droit
+    };
 
-            // Face Avant
-            -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-
-            // Face Gauche
-            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-
-            // Face Droite
-            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-
-            // Face Bas
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-            0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-
-            // Face Haut
-            -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f
+    // La "recette" pour assembler les triangles en utilisant les numéros ci-dessus
+    private final int[] indices = {
+            0, 1, 2, 2, 3, 0, // Face Avant
+            4, 5, 6, 6, 7, 4, // Face Arrière
+            4, 5, 1, 1, 0, 4, // Face Gauche
+            3, 2, 6, 6, 7, 3, // Face Droite
+            0, 3, 7, 7, 4, 0, // Face Haut
+            1, 5, 6, 6, 2, 1  // Face Bas
     };
 
     /**
@@ -157,8 +130,12 @@ public class MoteurJeu {
         // On envoie les données du tableau 'sommets' vers le buffer actif sur la carte graphique
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, sommets, GL15.GL_STATIC_DRAW);
 
-        // 5. Configuration des attributs (Comment lire le tableau de sommets)
-        // stride = 24 octets (6 floats * 4 octets) pour passer au sommet suivant
+        //creation d'un buffer pour l'ebo
+        int eboId = GL15.glGenBuffers();
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
+        //on envoie les indices cela vas permettre d'optimiser nos blocks
+        GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
+
 
         // Attribut 0 : Position (3 floats)
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 24, 0);
