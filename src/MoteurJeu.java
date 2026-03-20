@@ -10,6 +10,7 @@ import org.lwjgl.system.MemoryStack;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
 public class MoteurJeu {
@@ -22,6 +23,10 @@ public class MoteurJeu {
     private Vector3f cameraFront = new Vector3f(0.0f, 0.0f, -1.0f); // Là où je regardes
     private Vector3f cameraUp    = new Vector3f(0.0f, 1.0f, 0.0f); // Le "haut" du monde
     private float vitesseCamera  = 0.05f;
+
+    private float yaw = -90.0f; // Rotation gauche/droite
+    private float pitch = 0.0f;  // Rotation haut/bas
+    private double lastX = 400, lastY = 300; // Position précédente de la souris
 
     // sommets : données brutes envoyées à la carte graphique
     // On dessine ici 2 triangles pour former un carré.
@@ -171,6 +176,7 @@ public class MoteurJeu {
 
         int uniView = GL20.glGetUniformLocation(shaderProgram, "view");
 
+        //bloque le curseur dans la fenetre et le rend invisible
         GLFW.glfwSetInputMode(fenetre, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
 
         // Boucle de jeu (Loop)
@@ -208,6 +214,33 @@ public class MoteurJeu {
                 //envoie de la matrice de vue
                 view.get(fb);
                 GL20.glUniformMatrix4fv(uniView, false, fb);
+
+                DoubleBuffer xpos = stack.mallocDouble(1);
+                DoubleBuffer ypos = stack.mallocDouble(1);
+                GLFW.glfwGetCursorPos(fenetre, xpos, ypos);
+
+                double x = xpos.get(0);
+                double y = ypos.get(0);
+
+                float offsetX = (float) (x - lastX);
+                float offsetY = (float) (lastY - y); // Inversé car le Y va du haut vers le bas
+                lastX = x;
+                lastY = y;
+
+                float sensibilite = 0.1f;
+                yaw   += offsetX * sensibilite;
+                pitch += offsetY * sensibilite;
+
+                // On bloque le regard pour ne pas se briser la nuque à 90°
+                if (pitch > 89.0f) pitch = 89.0f;
+                if (pitch < -89.0f) pitch = -89.0f;
+
+                // Calcul du nouveau vecteur de direction
+                Vector3f direction = new Vector3f();
+                direction.x = (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
+                direction.y = (float) Math.sin(Math.toRadians(pitch));
+                direction.z = (float) (Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
+                cameraFront = direction.normalize();
             }
 
             // --- RENDU ---
