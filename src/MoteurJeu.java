@@ -15,32 +15,22 @@ import java.nio.FloatBuffer;
 
 public class MoteurJeu {
     //region --- ATTRIBUTS ---
-
     //region Fenêtre et Contrôle
-    /** Identifiant de la fenêtre GLFW. */
     private final long fenetre;
-    /** Angle de rotation pour l'animation. */
+    private int shaderProgram;
+    private int uniProjection, uniModel, uniView;
     private float angle = 0.0f;
     //endregion
 
     //region Caméra et Souris
-    /** Position de la caméra dans le monde. */
     private Vector3f cameraPos   = new Vector3f(0.0f, 0.0f, 3.0f);
-    /** Direction dans laquelle la caméra regarde. */
     private Vector3f cameraFront = new Vector3f(0.0f, 0.0f, -1.0f);
-    /** Vecteur orienté vers le "haut" du monde. */
     private Vector3f cameraUp    = new Vector3f(0.0f, 1.0f, 0.0f);
-    /** Vitesse de déplacement de la caméra. */
     private float vitesseCamera  = 0.05f;
-    /** Flag pour la première entrée de la souris. */
     private boolean firstMouse = true;
-    /** Rotation horizontale (gauche/droite). */
     private float yaw = -90.0f;
-    /** Rotation verticale (haut/bas). */
     private float pitch = 0.0f;
-    /** Dernière position X de la souris. */
     private double lastX = 400;
-    /** Dernière position Y de la souris. */
     private double lastY = 300;
     //endregion
 
@@ -131,23 +121,45 @@ public class MoteurJeu {
     //region --- CŒUR DU MOTEUR ---
     /**
      * Démarre la boucle principale du jeu.
-     * Gère l'initialisation OpenGL, la boucle d'événements et le rendu.
+     * Gère l'initialisation et le cycle de rendu.
      */
     public void run() {
-        // --- INITIALISATION OPENGL ---
+        init();
+
+        while (!GLFW.glfwWindowShouldClose(fenetre)) {
+            loop();
+        }
+
+        cleanup();
+    }
+
+    /**
+     * Initialisation globale des composants OpenGL.
+     */
+    private void init() {
         GLFW.glfwMakeContextCurrent(fenetre);
         GL.createCapabilities();
         GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GL11.glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
 
-        // 1. Initialisation des Shaders
+        initShaders();
+        initBuffers();
+        initMatrices();
+
+        GLFW.glfwSetInputMode(fenetre, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+    }
+
+    /**
+     * Initialise et compile les shaders.
+     */
+    private void initShaders() {
         String vertex = chargerShaders("ressources/shaders/bloc.vert");
         String fragment = chargerShaders("ressources/shaders/bloc.frag");
 
         int vertexShader = compileShader(vertex, GL20.GL_VERTEX_SHADER);
         int fragmentShader = compileShader(fragment, GL20.GL_FRAGMENT_SHADER);
 
-        // Création et liaison du programme shader
-        int shaderProgram = GL20.glCreateProgram();
+        shaderProgram = GL20.glCreateProgram();
         GL20.glAttachShader(shaderProgram, vertexShader);
         GL20.glAttachShader(shaderProgram, fragmentShader);
         GL20.glLinkProgram(shaderProgram);
@@ -156,14 +168,14 @@ public class MoteurJeu {
             throw new RuntimeException("Erreur de lien : " + GL20.glGetProgramInfoLog(shaderProgram));
         }
 
-        // Nettoyage des shaders compilés individuellement
         GL20.glDeleteShader(vertexShader);
         GL20.glDeleteShader(fragmentShader);
+    }
 
-        // Configuration du rendu initial
-        GL11.glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
-
-        // 2. Gestion des Buffers (VBO & EBO)
+    /**
+     * Initialise les buffers de données (VBO et EBO).
+     */
+    private void initBuffers() {
         int vboId = GL15.glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, sommets, GL15.GL_STATIC_DRAW);
@@ -172,22 +184,22 @@ public class MoteurJeu {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
 
-        // Définition de la structure des données (Layout)
-        // Attribut 0 : Position (3 float, décalage 0)
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 24, 0);
         GL20.glEnableVertexAttribArray(0);
 
-        // Attribut 1 : Couleur (3 float, décalage 12 octets)
         GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 24, 12);
         GL20.glEnableVertexAttribArray(1);
+    }
 
-        // 3. Configuration des Uniforms et Matrices
+    /**
+     * Configure les matrices et récupère les emplacements des uniforms.
+     */
+    private void initMatrices() {
         GL20.glUseProgram(shaderProgram);
-        int uniProjection = GL20.glGetUniformLocation(shaderProgram, "projection");
-        int uniModel = GL20.glGetUniformLocation(shaderProgram, "model");
-        int uniView = GL20.glGetUniformLocation(shaderProgram, "view");
+        uniProjection = GL20.glGetUniformLocation(shaderProgram, "projection");
+        uniModel = GL20.glGetUniformLocation(shaderProgram, "model");
+        uniView = GL20.glGetUniformLocation(shaderProgram, "view");
 
-        // Matrice de projection perspective
         Matrix4f projection = new Matrix4f().perspective((float) Math.toRadians(70.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -195,116 +207,110 @@ public class MoteurJeu {
             projection.get(fb);
             GL20.glUniformMatrix4fv(uniProjection, false, fb);
         }
+    }
 
-        // Configuration de la souris
-        GLFW.glfwSetInputMode(fenetre, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+    /**
+     * Boucle de rendu et de mise à jour.
+     */
+    private void loop() {
+        update(fenetre);
 
-        // --- BOUCLE DE JEU ---
-        while (!GLFW.glfwWindowShouldClose(fenetre)) {
-            // Mise à jour de l'état du jeu et entrées utilisateur
-            update(fenetre);
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+        GL20.glUseProgram(shaderProgram);
 
-            // Calcul de la rotation automatique du cube
-            angle += 0.05f;
-            Matrix4f model = new Matrix4f()
-                    .translate(0, 0, -2.0f)
-                    .rotate((float) Math.toRadians(angle), 0, 1, 0);
+        Vector3f cible = new Vector3f(cameraPos).add(cameraFront);
+        Matrix4f view = new Matrix4f().lookAt(cameraPos, cible, cameraUp);
 
-            // Mise à jour de la vue (Caméra)
-            Vector3f cible = new Vector3f(cameraPos).add(cameraFront);
-            Matrix4f view = new Matrix4f().lookAt(cameraPos, cible, cameraUp);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer fb = stack.mallocFloat(16);
 
-            // Envoi des matrices à la carte graphique
-            GL20.glUseProgram(shaderProgram);
-            try (MemoryStack stack = MemoryStack.stackPush()) {
-                FloatBuffer fb = stack.mallocFloat(16);
+            DoubleBuffer xpos = stack.mallocDouble(1);
+            DoubleBuffer ypos = stack.mallocDouble(1);
+            updateSouris(fenetre, xpos, ypos);
 
-                model.get(fb);
-                GL20.glUniformMatrix4fv(uniModel, false, fb);
+            view.get(fb);
+            GL20.glUniformMatrix4fv(uniView, false, fb);
 
-                view.get(fb);
-                GL20.glUniformMatrix4fv(uniView, false, fb);
-
-                // Gestion du mouvement de la souris pour la caméra
-                DoubleBuffer xpos = stack.mallocDouble(1);
-                DoubleBuffer ypos = stack.mallocDouble(1);
-                GLFW.glfwGetCursorPos(fenetre, xpos, ypos);
-
-                double x = xpos.get(0);
-                double y = ypos.get(0);
-
-                if (firstMouse) {
-                    lastX = x;
-                    lastY = y;
-                    firstMouse = false;
+            for (int x = -10; x < 10; x++) {
+                for (int z = -10; z < 10; z++) {
+                    dessinerBloc(x, -1, z, fb);
                 }
-
-                float offsetX = (float) (x - lastX);
-                float offsetY = (float) (lastY - y);
-                lastX = x;
-                lastY = y;
-
-                float sensibilite = 0.1f;
-                yaw   += offsetX * sensibilite;
-                pitch += offsetY * sensibilite;
-
-                // Limitation de la rotation verticale (nuque)
-                if (pitch > 89.0f) pitch = 89.0f;
-                if (pitch < -89.0f) pitch = -89.0f;
-
-                // Calcul du vecteur de direction de la caméra
-                Vector3f direction = new Vector3f();
-                direction.x = (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
-                direction.y = (float) Math.sin(Math.toRadians(pitch));
-                direction.z = (float) (Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
-                cameraFront = direction.normalize();
             }
-
-            // Rendu de la scène
-            render();
         }
+
+        GLFW.glfwSwapBuffers(fenetre);
     }
 
     /**
      * Gère les entrées clavier pour le déplacement de la caméra.
-     * @param window Handle de la fenêtre.
      */
-    private void update(long window) {
+    private void update(long fenetre) {
         GLFW.glfwPollEvents();
 
-        // Déplacement : Z+
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == GLFW.GLFW_PRESS) {
+        if (GLFW.glfwGetKey(fenetre, GLFW.GLFW_KEY_W) == GLFW.GLFW_PRESS) {
             cameraPos.add(new Vector3f(cameraFront).mul(vitesseCamera));
         }
-        // Déplacement : Z-
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == GLFW.GLFW_PRESS) {
+        if (GLFW.glfwGetKey(fenetre, GLFW.GLFW_KEY_S) == GLFW.GLFW_PRESS) {
             cameraPos.sub(new Vector3f(cameraFront).mul(vitesseCamera));
         }
-        // Déplacement : Gauche (Strafe)
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == GLFW.GLFW_PRESS) {
+        if (GLFW.glfwGetKey(fenetre, GLFW.GLFW_KEY_A) == GLFW.GLFW_PRESS) {
             Vector3f gauche = new Vector3f(cameraFront).cross(cameraUp).normalize();
             cameraPos.sub(gauche.mul(vitesseCamera));
         }
-        // Déplacement : Droite (Strafe)
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == GLFW.GLFW_PRESS) {
+        if (GLFW.glfwGetKey(fenetre, GLFW.GLFW_KEY_D) == GLFW.GLFW_PRESS) {
             Vector3f droite = new Vector3f(cameraFront).cross(cameraUp).normalize();
             cameraPos.add(droite.mul(vitesseCamera));
         }
     }
 
     /**
-     * Effectue les opérations de rendu OpenGL.
+     * Met à jour l'orientation de la caméra via la souris.
      */
-    private void render() {
-        // Effacement de l'écran (Couleur et Profondeur)
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+    private void updateSouris(long fenetre, DoubleBuffer xpos, DoubleBuffer ypos) {
+        GLFW.glfwGetCursorPos(fenetre, xpos, ypos);
+        double x = xpos.get(0);
+        double y = ypos.get(0);
 
-        // Dessin du cube via les indices (EBO)
-        // 36 indices pour 12 triangles (6 faces)
-        GL20.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
+        if (firstMouse) {
+            lastX = x;
+            lastY = y;
+            firstMouse = false;
+        }
 
-        // Affichage du buffer de rendu
-        GLFW.glfwSwapBuffers(fenetre);
+        float offsetX = (float) (x - lastX);
+        float offsetY = (float) (lastY - y);
+        lastX = x;
+        lastY = y;
+
+        float sensibilite = 0.1f;
+        yaw += offsetX * sensibilite;
+        pitch += offsetY * sensibilite;
+
+        if (pitch > 89.0f) pitch = 89.0f;
+        if (pitch < -89.0f) pitch = -89.0f;
+
+        Vector3f direction = new Vector3f();
+        direction.x = (float) (Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
+        direction.y = (float) Math.sin(Math.toRadians(pitch));
+        direction.z = (float) (Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch)));
+        cameraFront = direction.normalize();
+    }
+
+    /**
+     * Dessine un bloc unique à des coordonnées spécifiques.
+     */
+    private void dessinerBloc(int x, int y, int z, FloatBuffer fb) {
+        Matrix4f model = new Matrix4f().translate(x, y, z);
+        model.get(fb);
+        GL20.glUniformMatrix4fv(uniModel, false, fb);
+        GL11.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
+    }
+
+    /**
+     * Libère les ressources avant la fermeture.
+     */
+    private void cleanup() {
+        GL20.glDeleteProgram(shaderProgram);
     }
     //endregion
 }
