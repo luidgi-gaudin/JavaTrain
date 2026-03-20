@@ -21,14 +21,53 @@ public class MoteurJeu {
     // On dessine ici 2 triangles pour former un carré.
     // Chaque ligne représente un sommet avec : Position (X, Y, Z) et Couleur (R, G, B)
     private final float[] sommets = {
-            // Position (X, Y, Z)          // Couleur (R, G, B)
-            -0.5f,  0.5f, -2.0f,           1.0f, 0.0f, 0.0f,  // Haut-Gauche
-            -0.5f, -0.5f, -2.0f,           0.0f, 1.0f, 0.0f,  // Bas-Gauche
-            0.5f, -0.5f, -2.0f,           0.0f, 0.0f, 1.0f,  // Bas-Droit
+            // Face Arrière          // Couleurs
+            -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,
 
-            -0.5f,  0.5f, -2.0f,           1.0f, 0.0f, 0.0f,  // Haut-Gauche
-            0.5f, -0.5f, -2.0f,           0.0f, 0.0f, 1.0f,  // Bas-Droit
-            0.5f,  0.5f, -2.0f,           1.0f, 1.0f, 0.0f   // Haut-Droit
+            // Face Avant
+            -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
+
+            // Face Gauche
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+
+            // Face Droite
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
+
+            // Face Bas
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+
+            // Face Haut
+            -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f
     };
 
     /**
@@ -80,6 +119,8 @@ public class MoteurJeu {
         GLFW.glfwMakeContextCurrent(fenetre);
         // Initialisation de la bibliothèque LWJGL pour OpenGL
         GL.createCapabilities();
+
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
 
         // 1. Chargement des fichiers sources des shaders
         String vertex = chargerShaders("ressources/shaders/bloc.vert");
@@ -181,8 +222,8 @@ public class MoteurJeu {
         // Efface l'écran (couleur de fond + profondeur)
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
         // Dessine les triangles à partir des données dans le buffer actif
-        // 6 sommets au total (2 triangles)
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
+        // 36 sommets au total (12 triangles) et 6 faces pour faire le cube
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 36);
         // Affiche l'image calculée à l'écran (Double buffering)
         GLFW.glfwSwapBuffers(fenetre);
     }
